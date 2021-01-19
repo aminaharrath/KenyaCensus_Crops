@@ -1,0 +1,60 @@
+## TidyTuesday - Kenya Census Data - Week 4 ##
+
+## Set working directory ##
+setwd("~/Desktop/R/TidyTuesday")
+
+## Load the data ##
+install.packages("tidytuesdayR")
+tuesdata <- tidytuesdayR::tt_load('2021-01-19')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 4)
+
+gender <- tuesdata$gender
+crops <- tuesdata$crops # distribution of households growing permanent crops by type and country
+households <- tuesdata$households 
+
+## Load the libraries ##
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(stringr)
+library(RColorBrewer)
+
+## aggregate total crops for each county ##
+crops_clean <- crops[c(-2)] # remove farming
+crops_clean$total <- rowSums(crops_clean[2:10], na.rm = T)
+crops_clean <- crops_clean[-c(1),] # remove kenya
+
+## put the crops into one column (long format) ##
+crops_clean <- crops_clean %>%
+  gather(crop, n, 2:10, convert = TRUE)
+# sort in alphabetical order #
+sort_crops_clean <- with(crops_clean, crops_clean[order(SubCounty),])
+# remove NAs #
+sort_crops_clean <- na.omit(sort_crops_clean)
+sort_crops_clean$SubCounty <- str_to_title(sort_crops_clean$SubCounty)
+sort_crops_clean$fraction = sort_crops_clean$n / sort_crops_clean$total
+colnames(sort_crops_clean)[3] = "Crop"
+
+## Create Plot ##
+ggplot() +
+  geom_bar(aes(y = fraction,
+               x = SubCounty,
+               fill = Crop),
+           data = sort_crops_clean,
+           stat = "identity")  +
+  ylim(-0.1,1) +
+  coord_polar(start = 0) +
+theme(axis.text.y = element_blank(),
+      axis.text.x = element_text(size = 6.5),
+      panel.grid = element_blank(),
+      axis.ticks = element_blank(),
+      plot.background = element_rect(fill = "#fbf4e1"),
+      panel.background = element_rect(fill = "#fbf4e1"),
+      legend.background = element_rect(fill = "#fbf4e1"),
+      legend.text = element_text(size=rel(0.5))) +
+  labs(title = "Farming Proportion by Crop",
+       subtitle = "Kenya is the world's third largest producer of avocados",
+        x = "",
+        y = "",
+       caption = "Visualisation: Amina Harrath | Data: Kenya Population and Housing Census 2019") +
+  scale_fill_hue(c=45, l = 80, aesthetics = c("colour"))
