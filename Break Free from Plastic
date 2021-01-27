@@ -1,0 +1,63 @@
+## Set working directory ##
+
+setwd("~/Desktop/R/TidyTuesday/Week 5")
+
+## Load the data ##
+tuesdata <- tidytuesdayR::tt_load('2021-01-26')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 5)
+rawdata <- tuesdata$plastics
+
+## Load libraries ##
+library(tidyverse)
+library(dplyr)
+library(fs)
+library(ggalt)
+library(showtext)
+
+## Clean the data ##
+# Isolate top 15 polluting countries #
+countries <- plastics %>%
+  select(country, year, grand_total) %>%
+  distinct() %>%
+  group_by(country)
+sum_country  <- aggregate(grand_total~country+year, 
+                  data = countries, 
+                  FUN = sum)
+remove_country <- c("EMPTY")
+
+top15_countries <- reshape(sum_country, timevar = "year", idvar = "country", direction = "wide")
+top15_countries <- na.omit(top15_countries)
+# sort in order of 2019 #
+top15_countries <- with(top15_countries, top15_countries[order(grand_total.2019,decreasing = T),])
+top15_countries <- top15_countries[c(1:15),]
+
+
+## Creating the plot ##
+# Selecting colours #
+darkblue <- "#485665"
+brown <- "#836953"
+
+# plot for countries #
+ggplot() +
+  geom_segment(data=top15_countries, aes(y=country, yend=country, x=0, xend=75000), color="#dbdbdb", size=0.15) +
+  geom_dumbbell(data=top15_countries, aes(y=country, x=grand_total.2019, xend=grand_total.2020),
+                size=1, color="#b2b2b2", size_x=2, size_xend = 2, colour_x = darkblue, colour_xend = brown) + 
+  # Add labels under Vietnam #
+  geom_text(data = subset(top15_countries, country == "Vietnam"),
+          aes(x = grand_total.2019, y = country, label = "2019"),
+          color = darkblue, size = 2.75, vjust = 2, hjust = 0.5)  +
+  geom_text(data = subset(top15_countries, country == "Vietnam"),
+            aes(x = grand_total.2020, y = country, label = "2020"),
+            color = brown, size = 2.75, vjust = 2, hjust = 0.5) +
+  # Edit theme #
+  theme(panel.background = element_rect(fill = "#ecebe4"),
+        plot.background = element_rect(fill = "#ecebe4"),
+        axis.line = element_line(colour = "#b2b2b2"),
+        plot.subtitle = element_text(size = 10, margin = margin(10,0,0,0)),
+        plot.margin = margin(0.5,0.5,0.5,0.5,"cm")) +
+  ## Add labels ##
+  labs(x="Plastic pollution count (all types)", 
+       y=NULL, 
+       title="Top 15 countries with the most plastic pollution",
+       subtitle="How did the world's 2019 top polluters do in 2020?",
+       caption="Visualisation: Amina Harrath | Data: Break Free from Plastic")
