@@ -1,0 +1,54 @@
+# Set working directory #
+setwd("~/Desktop/R/TidyTuesday/Week 8")
+
+## Load the data ##
+tuesdata <- tidytuesdayR::tt_load('2021-02-16')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 8)
+
+income <- tuesdata$income
+
+## Load libraries ##
+library(ggplot2)
+library(tidyr)
+library(forcats)
+library(tidyverse)
+library(dplyr)
+library(extrafont)
+library(showtext)
+font_add_google("Teko")
+
+## percent stacked barplot ##s
+# turn data into long format #
+income_long <- income %>%
+  gather(income, n, 3:7, convert = TRUE)
+# set 0s to NA #
+income_long[income_long==0] <- NA
+
+ggplot(income_long, aes(fill=factor(income, 
+                                    levels = c("Other", "Tax", "Clothes", "Food", "Rent")), 
+                        y=n,
+                        x=fct_rev(Class),
+                        label = paste0(round(n),"%")), color = "black") +
+  geom_bar(position = "fill", stat = "identity", color = "black",size=0.25) +
+  geom_text(position = position_fill(vjust = 0.5), size =3, color = "white") +
+  scale_fill_manual(values = c("#dacec1","#78A2CC","#D3A08E","#7D617B","#161213")) +
+  coord_flip() +
+  theme(axis.text.x = element_blank(),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top",
+        panel.background = element_rect(fill = "#CEC0AB"),
+        plot.background = element_rect(fill = "#CEC0AB"),
+        legend.background = element_rect(fill = "#CEC0AB"),
+        text = element_text(family = "Teko"),
+        plot.tag = element_text(face="bold", size=10, angle=-90),
+        plot.tag.position = c(0.999, 0.45),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold")) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  geom_text(aes(x=Class, y = 1.05, label = as.character(`Actual Average`)), vjust=0.5, family = "Teko") +
+  labs(x=NULL, 
+       y=NULL, 
+       title="INCOME AND EXPENDITURE OF 150 NEGRO FAMILIES IN ATLANTA, GA., U.S.A.",
+       tag = "Actual Average ($)",
+       caption="Visualisation: Amina Harrath | Data: TidyTuesday")
