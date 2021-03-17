@@ -1,0 +1,53 @@
+## TidyTuesday - Week 12 (Video Games + Sliced) ##
+
+## Set Working Directory ##
+setwd("~/Desktop/R/TidyTuesday/Week 12")
+
+## Load the data ##
+tuesdata <- tidytuesdayR::tt_load('2021-02-16')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 12)
+games <- tuesdata$games
+
+## Load libraries ##
+library(ggplot2)
+library(dplyr)
+library(extrafont)
+library(showtext)
+font_add_google("VT323")
+showtext_auto()
+
+## Clean the data ##
+grouped.month = games %>%
+  group_by(year, month) %>%
+  filter(all(year>2018  & year<2021)) %>%
+  summarise(sumgames=sum(avg))
+grouped.month$month <- factor(grouped.month$month, levels=month.name)
+
+## Create plot ##
+ggplot(grouped.month,
+       aes(y=sumgames,
+           x=month,
+           group=year))  +
+  geom_point() +
+  geom_line(colour="#51b512") +
+  geom_text(data = subset(grouped.month, month == "December",group=year),
+            aes(x = month, y = sumgames, label = year), colour="white", face="bold")+
+  # Edit theme  #
+  theme(panel.background = element_rect(fill = "#1d1d1d"),
+        plot.background = element_rect(fill = "#1d1d1d"),
+        axis.line = element_line(colour = "#b2b2b2"),
+        axis.title = element_text(colour = "white", size=20),
+        axis.text = element_text(colour="white", size=15),
+        text = element_text(family = "VT323"),
+        plot.title = element_text(colour = "white", size=20),
+        plot.caption = element_text(colour = "white", size=10),
+        plot.subtitle = element_text(colour="white",size = 15),
+        plot.margin = margin(0.5,0.5,0.5,0.5,"cm")) +
+  ## Add labels ##
+  labs(x="2020", 
+       y="Number of players", 
+       title = "Impact of Pandemic Lockdown on Video Gaming",
+       subtitle ="Average Monthly Concurrent Players",
+       caption = "Visualisation: Amina Harrath | Data: TidyTuesday")+
+  geom_vline(xintercept = 3.75, colour="white", linetype="dashed", size=1) +
+  annotate(x=2.5,y=+Inf,vjust=1,label="UK Lockdown (16 March)", geom="label" )
