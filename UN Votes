@@ -1,0 +1,79 @@
+## Load the data and library ##
+library(unvotes)
+# Erik Voeten "Data and Analyses of Voting in the UN General Assembly" 
+# Routledge Handbook of International Organization, edited by Bob Reinalda (published May 27, 2013)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+# all country votes
+un_votes   <- un_votes
+un_roll_calls  <- un_roll_calls 
+## Join the vote and roll call datasets by  the shared rcid (roll call ID) column ##
+joined <- un_votes %>%
+  inner_join(un_roll_calls, by = "rcid")
+
+## Pick colours ##
+darkblue <- "#485665"
+brown <- "#836953"
+
+## How has the voting record of the UK changed for the Palestinian conflict ##
+# Join the issues #
+UK_plot <- joined %>%
+  filter(country == "United Kingdom of Great Britain and Northern Ireland") %>%
+  inner_join(un_roll_call_issues, by = "rcid") %>%
+  group_by(year = year(date), issue = "Palestinian conflict") %>%
+  summarize(votes = n(),
+            percent_yes = mean(vote == "yes")) %>%
+  filter(votes > 5) %>%
+  ggplot(aes(year, percent_yes)) +
+  geom_point() +
+  geom_smooth(se = FALSE, color = darkblue) +
+  facet_wrap(~ issue) +
+  xlim(1945, 2020)  +
+  # Edit theme #
+  theme(panel.background = element_rect(fill = "#ecebe4"),
+        plot.background = element_rect(fill = "#ecebe4"),
+        plot.title = element_blank()) +
+  # Add Labels #
+  labs(x="Year", 
+       y="How often UK votes 'Yes'")
+
+
+## How has the voting record of the US changed for the Palestinian conflict ##
+Israel_plot <- joined %>%
+  filter(country == "Israel") %>%
+  inner_join(un_roll_call_issues, by = "rcid") %>%
+  group_by(year = year(date), issue = "Palestinian conflict") %>%
+  summarize(votes = n(),
+            percent_yes = mean(vote == "yes")) %>%
+  filter(votes > 5) %>%
+  ggplot(aes(year, percent_yes)) +
+  geom_point() +
+  geom_smooth(se = FALSE, color = darkblue) +
+  facet_wrap(~ issue) +
+  # geom_vline(xintercept = 1973, color=brown, linetype=2) +
+ # geom_vline(xintercept = 1987, color=brown, linetype=2) +
+  xlim(1945, 2020) +
+  # Edit theme #
+  theme(panel.background = element_rect(fill = "#ecebe4"),
+        plot.background = element_rect(fill = "#ecebe4"),
+        plot.title = element_blank()) +
+  # Add Labels #
+  labs(x="Year", 
+       y="How often Israel votes 'Yes'",
+       title = "Israel's voting pattern",
+       caption = "Visualisation: Amina Harrath | Data: UN Votes")
+       
+# Create a clear grid #
+grid.newpage()
+# assign cell size of the grid, 3 by 2
+pushViewport(viewport(layout = grid.layout(3,1, heights = unit(c(0.5,5,5), "null")),
+                                           gp=gpar(fill="#ecebe4")))
+# print different histograms #
+print(UK_plot, vp = viewport(layout.pos.col = 1, layout.pos.row = 2))
+print(Israel_plot, vp = viewport(layout.pos.col = 1, layout.pos.row = 3))
+grid.arrange(grobs=list(UK_plot, Israel_plot), top="Voting Patterns", nrow=2,
+             bottom="Visualisation: Amina Harrath | Data: UN Votes"))
