@@ -1,0 +1,110 @@
+## TidyTuesday Week 17 - Netflix Titles ##
+
+## Set working directory ##
+setwd("~/Desktop/R/TidyTuesday")
+
+## Load the data ##
+install.packages("tidytuesdayR")
+tuesdata <- tidytuesdayR::tt_load('2021-01-19')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 17)
+
+netflix_titles <- tuesdata$netflix_titles
+
+## Load libraries ##
+library(quanteda)
+library(gridExtra)
+
+
+#### Description by genre ####
+## Create a speech corpus ##
+# docvars() =  create a metadata set to compare words across documents #
+speech_corpus_desc <- corpus(netflix_titles$description, docvars = netflix_titles)
+## Subset for specific genres ##
+speechCorpus.genre <- corpus_subset(speech_corpus_desc, listed_in %in% c ("Horror Movies", 
+                                                                          "Documentaries", "Comedies",
+                                                                          "Romantic Movies", "Thrillers",
+                                                                          "Action & Adventure"))
+# Clean the documents using feature reduction #
+dfm_genre <- dfm(speechCorpus.genre, 
+                   groups = "listed_in",
+                   tolower = T,
+                   remove_numbers=T,
+                   remove_punct=T,
+                   remove = stopwords("en"))
+dim(dfm_genre) # 4,508 words
+
+## Create a word cloud ##
+wordcloud_genre <- textplot_wordcloud(
+  dfm_genre,
+  comparison = TRUE,
+  labelsize = 1,
+  fixed_aspect = TRUE,
+  color = c("#629e6b", "#b52f2f","#6600CC", "#4894db"))
+
+## Text frequency plot ##
+bygenre <- textstat_frequency(dfm_genre,10,groups="listed_in")
+wordcount <- textstat_frequency(dfm_genre,25, force = TRUE)
+
+## Genre 1 - Horror Movies ##
+Horror <- ggplot(bygenre[bygenre$group=="Horror Movies",],
+       aes(x=frequency,y=reorder(feature,frequency))) +
+  geom_point() +
+  ylab("") +
+  xlab("Frequency") +
+  ggtitle("Horror Movies")
+
+## Genre 2 - Documentaries ##
+Docs <- ggplot(bygenre[bygenre$group=="Documentaries",],
+       aes(x=frequency,y=reorder(feature,frequency))) +
+  geom_point() +
+  ylab("") +
+  xlab("Frequency") +
+  ggtitle("Documentaries")
+
+## Genre 3 - Comedies ##
+Comedies <- ggplot(bygenre[bygenre$group=="Comedies",],
+       aes(x=frequency,y=reorder(feature,frequency))) +
+  geom_point() +
+  ylab("") +
+  xlab("Frequency") +
+  ggtitle("Comedies")
+
+## Genre 4 - Thrillers ##
+Thrillers <- ggplot(bygenre[bygenre$group=="Thrillers",],
+       aes(x=frequency,y=reorder(feature,frequency))) +
+  geom_point() +
+  ylab("") +
+  xlab("Frequency") +
+  ggtitle("Thrillers")
+
+## Genre 5 - Romantic Movies ##
+Romantic  <- ggplot(bygenre[bygenre$group=="Romantic Movies",],
+       aes(x=frequency,y=reorder(feature,frequency))) +
+  geom_point() +
+  ylab("") +
+  xlab("Frequency") +
+  ggtitle("Romantic Movies")
+
+## Genre 6 - Action & Adventure ##
+Action <-ggplot(bygenre[bygenre$group=="Action & Adventure",],
+       aes(x=frequency,y=reorder(feature,frequency))) +
+  geom_point() +
+  ylab("") +
+  xlab("Frequency") +
+  ggtitle("Action & Adventure")
+
+## Combine all text ferquency plots using gridExtra ##
+# Create a clear grid #
+grid.newpage()
+# assign cell size of the grid, 3 by 2
+pushViewport(viewport(layout = grid.layout(4,3, heights = unit(c(0.5,5,5,0.5), "null")),
+                      gp=gpar(fill="#ecebe4")))
+# print different histograms #
+print(Horror, vp = viewport(layout.pos.col = 1, layout.pos.row = 2))
+print(Comedies, vp=viewport(layout.pos.col = 2, layout.pos.row = 2))
+print(Action, vp=viewport(layout.pos.col = 3, layout.pos.row = 2))
+print(Thrillers, vp = viewport(layout.pos.col = 1, layout.pos.row = 3))
+print(Romantic, vp = viewport(layout.pos.col = 2, layout.pos.row = 3))
+print(Docs, vp = viewport(layout.pos.col = 3, layout.pos.row = 3))
+grid.text("Top 10 words used in Netflix Movie descriptions by genre", vp=viewport(layout.pos.row = 1))
+grid.text("Visualisation: Amina Harrath | Data: Kaggle", vp=viewport(layout.pos.row = 4))
